@@ -170,9 +170,19 @@ public class ObjectHolderRegistry
         {
             if (((f.getModifiers() & flags) != flags) || f.isAnnotationPresent(ObjectHolder.class))
                 continue;
-            ObjectHolderRef ref = new ObjectHolderRef(f, value + ':' + f.getName().toLowerCase(Locale.ENGLISH), extractFromExistingValues);
-            if (ref.isValid())
-                addHandler(ref);
+            String baseName = f.getName().toLowerCase(Locale.ENGLISH);
+
+            // This predicate serves to filter out the public static final field `module$` which is
+            //    added to all Scala objects
+            if (baseName.equals("module$")) {
+                LOGGER.warn(REGISTRIES, "Field `module$` discovered in a class {} annotated "
+                    + "with ObjectHolder, '$' is an invalid character. If this occurred in a Scala "
+                    + "object it can be safely ignored", clazz.getName());
+            } else {
+                ObjectHolderRef ref = new ObjectHolderRef(f, value + ':' + baseName, extractFromExistingValues);
+                if (ref.isValid())
+                    addHandler(ref);
+            }
         }
     }
 
